@@ -1,0 +1,38 @@
+version: '2'
+volumes:
+  nginx-etc:
+  nginx-certs:
+  nginx-vhosts:
+  nginx-html:
+services:
+#FRONTAL PROXY
+    nginx:
+        restart: always
+        image: jwilder/nginx-proxy
+        volumes:
+            - nginx-certs:/etc/nginx/certs:ro
+            - nginx-vhosts:/etc/nginx/vhost.d
+            - nginx-etc/etc/nginx/conf.d
+            - nginx-html:/usr/share/nginx/html:rw
+            - nginx-etc:/etc/nginx/
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+        ports:
+          - 80:80
+          - 443:443
+        labels:
+            com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: true
+        networks:
+          - outside_access
+    letsencrypt-companion:
+        depends_on:
+          - nginx
+        restart: always
+        image: jrcs/letsencrypt-nginx-proxy-companion
+        volumes:
+            - nginx-certs:/etc/nginx/certs:rw
+            - nginx-vhosts:/etc/nginx/vhost.d:rw
+            - nginx-html:/usr/share/nginx/html:rw
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+
+networks:
+  outside_access:
